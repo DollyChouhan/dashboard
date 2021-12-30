@@ -16,10 +16,14 @@
 package handler
 
 import (
+	"database/sql"
+	"fmt"
 	"log"
 	"net/http"
 	"strconv"
 	"strings"
+
+	_ "github.com/lib/pq" // postgres golang driver
 
 	restful "github.com/emicklei/go-restful"
 	"github.com/kubernetes/dashboard/src/app/backend/api"
@@ -27,6 +31,7 @@ import (
 	authApi "github.com/kubernetes/dashboard/src/app/backend/auth/api"
 	clientapi "github.com/kubernetes/dashboard/src/app/backend/client/api"
 	"github.com/kubernetes/dashboard/src/app/backend/errors"
+	"github.com/kubernetes/dashboard/src/app/backend/iam/model"
 	"github.com/kubernetes/dashboard/src/app/backend/integration"
 	metricapi "github.com/kubernetes/dashboard/src/app/backend/integration/metric/api"
 	"github.com/kubernetes/dashboard/src/app/backend/plugin"
@@ -627,7 +632,9 @@ func CreateHTTPAPIHandler(iManager integration.IntegrationManager, cManager clie
 	apiV1Ws.Route(
 		apiV1Ws.GET("/secret/{namespace}/{name}").
 			To(apiHandler.handleGetSecretDetail).
-			Writes(secret.SecretDetail{}))
+			// TODO		Writes(secret.SecretDetail{}))
+			Writes(secret.SecretDetailSpec{}))
+
 	apiV1Ws.Route(
 		apiV1Ws.POST("/secret").
 			To(apiHandler.handleCreateImagePullSecret).
@@ -1144,6 +1151,25 @@ func CreateHTTPAPIHandler(iManager integration.IntegrationManager, cManager clie
 		apiV1Ws.GET("/tenants/{tenant}/log/file/{namespace}/{pod}/{container}").
 			To(apiHandler.handleLogFileWithMultiTenancy).
 			Writes(logs.LogDetails{}))
+	// IAM User related routes
+	apiV1Ws.Route(
+		apiV1Ws.POST("/users").
+			To(apiHandler.CreateUser).
+			Reads(model.User{}).
+			Writes(model.User{}))
+	apiV1Ws.Route(
+		apiV1Ws.GET("/users").
+			To(apiHandler.GetAllUser).
+			Writes(model.User{}))
+
+	apiV1Ws.Route(
+		apiV1Ws.GET("/users/{username}").
+			To(apiHandler.GetUser).
+			Writes(model.User{}))
+	apiV1Ws.Route(
+		apiV1Ws.DELETE("/users/{userid}").
+			To(apiHandler.handleDeleteUser).
+			Writes(model.User{}))
 
 	return wsContainer, nil
 }
@@ -1191,8 +1217,8 @@ func (apiHandler *APIHandler) handleGetTenantList(request *restful.Request, resp
 		return
 	}
 
-	dataselect := parseDataSelectPathParameter(request)
-	result, err := tenant.GetTenantList(k8sClient, dataselect)
+	dataSelect := parseDataSelectPathParameter(request)
+	result, err := tenant.GetTenantList(k8sClient, dataSelect)
 	if err != nil {
 		errors.HandleInternalError(response, err)
 		return
@@ -5005,4 +5031,254 @@ func parseDataSelectPathParameter(request *restful.Request) *dataselect.DataSele
 	filterQuery := parseFilterPathParameter(request)
 	metricQuery := parseMetricPathParameter(request)
 	return dataselect.NewDataSelectQuery(paginationQuery, sortQuery, filterQuery, metricQuery)
+}
+
+// IAM Service related functions
+
+// response format
+type response struct {
+	ID      int64  `json:"id,omitempty"`
+	Message string `json:"message,omitempty"`
+}
+
+// create connection with postgres db
+func createConnection() *sql.DB {
+	connStr := "host=192.168.1.243 port=5434 dbname=postgres user=postgres password=sonu123 sslmode=disable"
+	db, err := sql.Open("postgres", connStr)
+
+	if err != nil {
+		panic(err)
+	}
+
+	// check the connection
+	err = db.Ping()
+
+	if err != nil {
+		panic(err)
+	}
+
+	fmt.Println("Successfully connected!")
+	// return the connection
+	return db
+}
+
+// CreateUser create a user in the postgres db
+func (apiHandler *APIHandler) CreateUser(w *restful.Request, r *restful.Response) {
+	// set the header to content type x-www-form-urlencoded
+	// Allow all origin to handle cors issue
+
+	// create an empty user of type model.User
+	var user model.User
+
+	// decode the json request to user
+	//err := json.NewDecoder(w.ReadEntity(&user))
+	err := w.ReadEntity(&user)
+	if err != nil {
+		log.Fatalf("Unable to decode the request body.  %v", err)
+	}
+
+	// call insert user function and pass the user
+	insertID := insertUser(user)
+
+	// format a response object
+	res := response{
+		ID:      insertID,
+		Message: "User created successfully",
+	}
+
+	// send the response
+	d := r.ResponseWriter
+	d.Write([]byte(res.Message))
+}
+
+func (apiHandler *APIHandler) GetUser(w *restful.Request, r *restful.Response) {
+	// get the userid from the request params, key is "id"
+	username := w.PathParameter("username")
+
+	// call the getUser function with user id to retrieve a single user
+	user, err := getUser(username)
+
+	if err != nil {
+		log.Fatalf("Unable to get user. %v", err)
+	}
+
+	r.WriteHeaderAndEntity(http.StatusOK, user)
+}
+
+// GetAllUser will return all the users
+func (apiHandler *APIHandler) GetAllUser(w *restful.Request, r *restful.Response) {
+	// get all the users in the db
+	users, err := getAllUsers()
+
+	if err != nil {
+		log.Fatalf("Unable to get all user. %v", err)
+	}
+
+	// send all the users as response
+	r.WriteHeaderAndEntity(http.StatusOK, users)
+}
+
+func (apiHandler *APIHandler) handleDeleteUser(w *restful.Request, r *restful.Response) {
+
+	// get the userid from the request params, key is "userid"
+
+	userid := w.PathParameter("userid")
+
+	// call the deleteUser, convert the int to int64
+	id, err := strconv.Atoi(userid)
+	deletedRows := deleteUser(int64(id))
+
+	if err != nil {
+		log.Fatalf("Unable to get user. %v", err)
+	}
+
+	// format the message string
+	msg := fmt.Sprintf("User deleted successfully. Total rows/record affected %v", deletedRows)
+
+	// format the reponse message
+	res := response{
+		ID:      int64(id),
+		Message: msg,
+	}
+
+	// send the response
+	r.WriteHeaderAndEntity(http.StatusOK, res)
+}
+
+//------------------------- handler functions ----------------
+// insert one user in the DB
+
+func insertUser(user model.User) int64 {
+
+	// create the postgres db connection
+
+	db := createConnection()
+	//fmt.Printf("fetched token \n"+user_token)
+	// close the db connection
+	defer db.Close()
+
+	// create the insert sql query
+	// returning userid will return the id of the inserted user
+	sqlStatement := `INSERT INTO users (username, password, token, type) VALUES ($1, $2, $3, $4) RETURNING userid`
+	// the inserted id will store in this id
+	var id int64
+
+	// execute the sql statement
+	// Scan function will save the insert id in the id
+	err := db.QueryRow(sqlStatement, user.Username, user.Password, user.Token, user.Type).Scan(&id)
+
+	if err != nil {
+		log.Fatalf("Unable to execute the query. %v", err)
+	}
+
+	fmt.Printf("Inserted a single record %v", id)
+	// return the inserted id
+	return id
+}
+
+// get one user from the DB by its userid
+func getUser(param string) (model.User, error) {
+	// create the postgres db connection
+	db := createConnection()
+
+	// close the db connection
+	defer db.Close()
+
+	// create a user of model.User type
+	var user model.User
+
+	// create the select sql query
+	sqlStatement := `SELECT * FROM users WHERE username=$1`
+
+	// execute the sql statement
+	row := db.QueryRow(sqlStatement, param)
+
+	// unmarshal the row object to user
+	err := row.Scan(&user.ID, &user.Username, &user.Password, &user.Token, &user.Type)
+
+	switch err {
+	case sql.ErrNoRows:
+		fmt.Println("No rows were returned!")
+		return user, nil
+	case nil:
+		return user, nil
+	default:
+		log.Fatalf("Unable to scan the row. %v", err)
+	}
+
+	// return empty user on error
+	return user, err
+}
+
+// get one user from the DB by its userid
+func getAllUsers() ([]model.User, error) {
+	// create the postgres db connection
+	db := createConnection()
+
+	// close the db connection
+	defer db.Close()
+
+	var users []model.User
+
+	// create the select sql query
+	sqlStatement := `SELECT * FROM users`
+
+	// execute the sql statement
+	rows, err := db.Query(sqlStatement)
+
+	if err != nil {
+		log.Fatalf("Unable to execute the query. %v", err)
+	}
+
+	// close the statement
+	defer rows.Close()
+
+	// iterate over the rows
+	for rows.Next() {
+		var user model.User
+
+		// unmarshal the row object to user
+		err = rows.Scan(&user.ID, &user.Username, &user.Password, &user.Token, &user.Type)
+
+		if err != nil {
+			log.Fatalf("Unable to scan the row. %v", err)
+		}
+
+		// append the user in the users slice
+		users = append(users, user)
+
+	}
+
+	// return empty user on error
+	return users, err
+}
+
+func deleteUser(id int64) int64 {
+
+	// create the postgres db connection
+	db := createConnection()
+
+	// close the db connection
+	defer db.Close()
+
+	// create the delete sql query
+	sqlStatement := `DELETE FROM users WHERE userid=$1`
+
+	// execute the sql statement
+	res, err := db.Exec(sqlStatement, id)
+
+	if err != nil {
+		log.Fatalf("Unable to execute the query. %v", err)
+	}
+
+	// check how many rows affected
+	rowsAffected, err := res.RowsAffected()
+
+	if err != nil {
+		log.Fatalf("Error while checking the affected rows. %v", err)
+	}
+
+	fmt.Printf("Total rows/record affected %v", rowsAffected)
+
+	return rowsAffected
 }
