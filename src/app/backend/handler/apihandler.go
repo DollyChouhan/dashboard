@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"os"
 	"strconv"
 	"strings"
 
@@ -5043,7 +5044,16 @@ type response struct {
 
 // create connection with postgres db
 func createConnection() *sql.DB {
-	connStr := "host=192.168.1.243 port=5434 dbname=postgres user=postgres password=sonu123 sslmode=disable"
+
+	DB_HOST := os.Getenv("DB_HOST")
+	DB_PORT := os.Getenv("DB_PORT")
+	POSTGRES_USER := os.Getenv("POSTGRES_USER")
+	POSTGRES_PASSWORD := os.Getenv("POSTGRES_PASSWORD")
+	POSTGRES_DB := os.Getenv("POSTGRES_DB")
+
+	// Open the connection
+	connStr := "host=" + DB_HOST + " port=" + DB_PORT + " dbname=" + POSTGRES_DB + " user=" + POSTGRES_USER + " password=" + POSTGRES_PASSWORD + " sslmode=disable"
+	//connStr := "host=192.168.1.243 port=5434 dbname=postgres user=postgres password=sonu123 sslmode=disable"
 	db, err := sql.Open("postgres", connStr)
 
 	if err != nil {
