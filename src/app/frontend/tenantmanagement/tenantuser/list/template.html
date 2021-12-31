@@ -1,38 +1,54 @@
-<style>
-  td.mat-cell:first-of-type, td.mat-footer-cell:first-of-type, th.mat-header-cell:first-of-type{
-    padding: 20px !important;
-    font-size: 15px !important;
-  }
-  td.mat-cell, td.mat-footer-cell, th.mat-header-cell{
-    padding: 20px !important;
-    font-size: 15px !important;
-  }
-  .kd-light-theme .mat-table{
-    box-shadow: none !important;
-  }
-</style>
-<kd-card role="table">
-  <div title
-       fxLayout="row"
-       i18n>Users</div>
-  <div description><span class="kd-muted-light"
-                         i18n>Items:3&nbsp;</span></div>
-  <div actions>
-    <kd-card-list-filter></kd-card-list-filter>
+<div class="row">
+  <div class="col-12 col-sm-12 col-md-12 col-lg-12">
+    <div class="create_btn_sec" align="end">
+      <button mat-raised-button matTooltip="Add Tenant" color="primary" (click)="onClick()">
+        <img class="add_icon" src="assets/images/plus_icon_white.svg" alt="">
+        Create User
+      </button>
+    </div>
   </div>
-  <div content>
-    <table style="width: 100%;" mat-table [dataSource]="dataSource" class="mat-elevation-z8 demo-table">
-      <ng-container [matColumnDef]="user"   *ngFor="let user of displayedColumns">
-        <th  mat-header-cell  *matHeaderCellDef> {{user}} </th>
-        <td mat-cell   *matCellDef="let element"> {{element[user]}} </td>
+</div>
+
+<div class="list_container list_container3">
+  <mat-accordion>
+    <mat-expansion-panel [expanded]="true">
+      <mat-expansion-panel-header>
+        <mat-panel-title>
+          Images
+        </mat-panel-title>
+        <mat-panel-description>
+          <div class="panel_description">
+            <span>Items: </span>
+            {{totalUsers}}
+          </div>
+        </mat-panel-description>
+      </mat-expansion-panel-header>
+
+      <mat-table [dataSource]="dataSource" class="mat-elevation-z8" matSort>
+
+        <ng-container matColumnDef="id">
+          <mat-header-cell *matHeaderCellDef> ID </mat-header-cell>
+          <mat-cell *matCellDef="let element"> {{element.id}} </mat-cell>
+        </ng-container>
+
+        <ng-container matColumnDef="username">
+          <mat-header-cell *matHeaderCellDef mat-sort-header> Username </mat-header-cell>
+          <mat-cell *matCellDef="let element">
+            {{element.username}}
+          </mat-cell>
       </ng-container>
 
-      <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
-      <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
-    </table>
-    <mat-paginator [length]="1"
-                   [pageSize]="1"
-                   [hidePageSize]="true"
-                   [showFirstLastButtons]="true"></mat-paginator>
-  </div>
-</kd-card>
+        <ng-container matColumnDef="type">
+          <mat-header-cell *matHeaderCellDef> Type </mat-header-cell>
+          <mat-cell *matCellDef="let element"> {{element.type}} </mat-cell>
+        </ng-container>
+
+        <mat-header-row *matHeaderRowDef="displayedColumns"></mat-header-row>
+        <mat-row *matRowDef="let row; columns: displayedColumns;"></mat-row>
+      </mat-table>
+      <mat-paginator [pageSizeOptions]="[5, 10]" [pageSize]="10" showFirstLastButtons
+                     aria-label="Select page of periodic elements">
+      </mat-paginator>
+    </mat-expansion-panel>
+  </mat-accordion>
+</div>

@@ -49,6 +49,7 @@ export class LoginComponent implements OnInit {
   private token_: string;
   private username_: string;
   private password_: string;
+  private responseData: any;
 
   constructor(
     private readonly authService_: AuthService,
@@ -90,8 +91,8 @@ export class LoginComponent implements OnInit {
     return this.enabledAuthenticationModes_;
   }
 
-  login(): void {
-    this.authService_.login(this.getLoginSpec_()).subscribe(
+  async login() {
+    this.authService_.login(await this.getLoginSpec_()).subscribe(
       (errors: K8SError[]) => {
         if (errors.length > 0) {
           this.errors = errors.map(error => error.toKdError());
@@ -136,21 +137,34 @@ export class LoginComponent implements OnInit {
     }
   }
 
+  getData(username:any) {
+    return this.http_.get('/api/v1/users/'+username, {responseType: 'json'})
+  }
+
   private onFileLoad_(file: KdFile): void {
     this.kubeconfig_ = file.content;
   }
 
-  private getLoginSpec_(): LoginSpec {
+  public GetCurrentUserInformation(username:any): Promise<any>{
+    return this.getData(username).toPromise()
+  }
+
+  private async getLoginSpec_():Promise<LoginSpec>  {
+
     switch (this.selectedAuthenticationMode) {
       case LoginModes.Kubeconfig:
         return {kubeConfig: this.kubeconfig_} as LoginSpec;
       case LoginModes.Token:
+
         return {token: this.token_} as LoginSpec;
       case LoginModes.Basic:
-        return {
-          username: this.username_,
-          password: this.password_,
-        } as LoginSpec;
+        this.responseData = await this.GetCurrentUserInformation(this.username_)
+        if (this.responseData.password == this.password_){
+          return this.responseData as LoginSpec;
+        }
+        else{
+          return {} as LoginSpec;
+        }
       default:
         return {} as LoginSpec;
     }

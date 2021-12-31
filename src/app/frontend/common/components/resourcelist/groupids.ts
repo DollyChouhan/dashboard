@@ -27,7 +27,6 @@ export enum ListIdentifier {
   daemonSet = 'daemonSetList',
   pod = 'podList',
   replicaSet = 'replicaSetList',
-
   ingress = 'ingressList',
   service = 'serviceList',
   configMap = 'configMapList',
@@ -40,9 +39,9 @@ export enum ListIdentifier {
   tenant = 'tenant',
   resourcequota = 'resourcequota',
   role = 'roleList',
-  tenantpartition = 'tenantpartition'
+  tenantpartition = 'tenantpartition',
+  user = 'user'
 }
-
 
 export enum ListGroupIdentifier {
   cluster = 'clusterGroup',

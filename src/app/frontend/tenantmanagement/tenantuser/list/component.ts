@@ -12,48 +12,63 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {Component,Input, OnInit,Inject} from '@angular/core';
-import { HttpClient } from "@angular/common/http";
-export interface Elements {
+import {Component,Input, OnInit,Inject, ViewChild} from '@angular/core';
+import {HttpClient} from "@angular/common/http";
+import {UserApi} from "./userapi.service"
+import {VerberService} from "../../../../frontend/common/services/global/verber"
+import {MatPaginator} from '@angular/material/paginator';
+import {MatTableDataSource} from '@angular/material/table';
+import {MatSort} from '@angular/material/sort';
 
-  User: string;
-  Tenant: string;
-  Phase: string;
-  Age: string;
+export interface UserElement {
+  ID      :number;
+  Username :string ;
+  Type     :string ;
 }
-const ELEMENT_DATA: Elements[]=[];
+const USER_DATA: UserElement[]=[];
+
 @Component({
   selector: 'kd-tenantusers-list',
   templateUrl: './template.html',
 })
 export class TenantUsersListComponent implements OnInit{
   tempData:any[]=[];
-  displayedColumns = ['User','Tenant','Phase','Age'];
+  displayedColumns = ['id', 'username', 'type'];
 
-  public userArray:any[] = [];
-  dataSource:any;
-  constructor(private http: HttpClient){
+  userArray: any[] = [];
+  displayName: any;
+  typeMeta: any;
+  objectMeta: any;
+  dataSource: MatTableDataSource<any>;
+  totalUsers: number;
+
+  @ViewChild(MatPaginator, {static: true}) paginator: MatPaginator;
+  @ViewChild(MatSort, {static: true}) sort: MatSort;
+
+  constructor(
+    private verber_: VerberService,
+    private userAPI_:UserApi,
+    private http: HttpClient){
   }
   ngOnInit(): void {
-    this.http.get('../assets/auth.csv', {responseType: 'text'})
-      .subscribe(
-        data => {
-          let csvToRowArray = data.split("\n");
-          for (let index = 1; index < csvToRowArray.length - 1; index++) {
-            let row = csvToRowArray[index].split(",");
+    this.userAPI_.allUsers().subscribe(data=>{
+      for (let index = 0; index < data.length; index++) {
+        const row = data[index];
             this.userArray.push(row);
           }
-          for(var i=0;i<this.userArray.length;i++)
-          {
-            ELEMENT_DATA.push({User:this.userArray[i][1],Tenant:this.userArray[i][4],Phase:this.userArray[i][5],Age:this.userArray[i][6]});
+      this.dataSource = new MatTableDataSource(this.userArray);
+      this.dataSource.paginator = this.paginator;
+      this.dataSource.sort = this.sort;
+      this.totalUsers = this.dataSource.data.length
+    });
           }
-          this.dataSource=ELEMENT_DATA
-          console.log(ELEMENT_DATA)
-        },
-        error => {
-          console.log(error);
-        }
-      );
-  }
 
+  onClick(): void {
+    this.verber_.showUserCreateDialog(this.displayName, this.typeMeta, this.objectMeta);  //changes needed
+        }
+  deleteUser(userID:string): void {
+    this.userAPI_.deleteUser(userID).subscribe(result=>{
+      console.log("result from delete"+result)
+    });
+  }
 }

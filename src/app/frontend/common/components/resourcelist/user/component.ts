@@ -14,7 +14,7 @@
 
 import {HttpParams} from '@angular/common/http';
 import {Component, Input} from '@angular/core';
-import {Tenant, TenantList} from '@api/backendapi';
+import {User, UserList} from '@api/backendapi';
 import {Observable} from 'rxjs/Observable';
 
 import {ResourceListWithStatuses} from '../../../resources/list';
@@ -28,15 +28,17 @@ import {MenuComponent} from '../../list/column/menu/component';
   selector: 'kd-users-list',
   templateUrl: './template.html',
 })
-export class UserListComponent extends ResourceListWithStatuses<TenantList, Tenant> {
-  @Input() endpoint = EndpointManager.resource(Resource.tenant).list();
+export class UserListComponent extends ResourceListWithStatuses<UserList, User> {
 
+  @Input() endpoint = EndpointManager.resource(Resource.user).list();
   constructor(
-    private readonly tenant_: ResourceService<TenantList>,
+    private readonly user_: ResourceService<UserList>,
     notifications: NotificationsService,
+
   ) {
-    super('tenant', notifications);
-    this.id = ListIdentifier.tenant;
+
+    super('user', notifications);
+    this.id = ListIdentifier.user;
     this.groupId = ListGroupIdentifier.cluster;
 
     // Register status icon handlers
@@ -47,19 +49,19 @@ export class UserListComponent extends ResourceListWithStatuses<TenantList, Tena
     this.registerActionColumn<MenuComponent>('menu', MenuComponent);
   }
 
-  getResourceObservable(params?: HttpParams): Observable<TenantList> {
-    return this.tenant_.get(this.endpoint, undefined, params);
+  getResourceObservable(params?: HttpParams): Observable<UserList> {
+    return this.user_.get(this.endpoint, undefined, params);
   }
 
-  map(tenantList: TenantList): Tenant[] {
-    return tenantList.tenants;
+  map(userList: UserList): User[] {
+    return userList.users;
   }
 
-  isInErrorState(resource: Tenant): boolean {
+  isInErrorState(resource: User): boolean {
     return resource.phase === 'Terminating';
   }
 
-  isInSuccessState(resource: Tenant): boolean {
+  isInSuccessState(resource: User): boolean {
     return resource.phase === 'Active';
   }
 

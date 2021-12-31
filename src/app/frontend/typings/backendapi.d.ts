@@ -1215,3 +1215,11 @@ export interface RoleList extends ResourceList {
 export interface TenantDetail extends ResourceDetail {
   phase: string;
 }
+
+export interface User extends Resource {
+  phase: string;
+}
+
+export interface UserList extends ResourceList {
+  users: User[];
+}

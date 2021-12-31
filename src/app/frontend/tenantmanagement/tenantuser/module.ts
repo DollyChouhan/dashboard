@@ -21,9 +21,9 @@ import {TenantUsersRoutingModule} from './routing';
 import {TenantUsersListComponent} from 'tenantmanagement/tenantuser/list/component';
 
 import {TenantUsersDetailComponent} from "./detail/component";
-
+import {MatExpansionModule} from '@angular/material/expansion';
 @NgModule({
-  imports: [SharedModule, ComponentsModule, TenantUsersRoutingModule],
+  imports: [SharedModule, ComponentsModule, TenantUsersRoutingModule, MatExpansionModule],
   declarations: [TenantUsersListComponent, TenantUsersDetailComponent],
 })
 export class TenantUsersModule {}

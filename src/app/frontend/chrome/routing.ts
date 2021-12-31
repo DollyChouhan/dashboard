@@ -175,7 +175,8 @@ const routes: Routes = [
       // Custom resource definitions
       {
         path: 'customresourcedefinition',
-        loadChildren: 'crd/module#CrdModule'},
+        loadChildren: 'crd/module#CrdModule'
+      },
 
       // Others
       {

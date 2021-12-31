@@ -14,6 +14,7 @@
 // limitations under the License.
 
 const baseHref = 'api/v1';
+
 export enum Resource {
   job = 'job',
   cronJob = 'cronjob',
@@ -41,6 +42,7 @@ export enum Resource {
   event = 'event',
   container = 'container',
   tenant = 'tenant',
+  user = 'user',
   partition = 'partition',
   resourcequota = 'resourcequota',
   role = 'role',
@@ -58,6 +60,7 @@ class ResourceEndpoint {
     private readonly tenanted_ = false,
   ) {
   }
+
   list(): string {
     return `${baseHref}${this.tenanted_ ? '/tenants/:tenant' : ''}/${this.resource_}${
       this.namespaced_ ? '/:namespace' : ''

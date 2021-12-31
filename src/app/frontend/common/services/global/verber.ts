@@ -25,14 +25,16 @@ import {TriggerResourceDialog} from '../../dialogs/triggerresource/dialog';
 import {RawResource} from '../../resources/rawresource';
 
 // tenat dialog
-import { CreateTenantDialog } from './../../dialogs/createTenant/dialog';
+import {CreateTenantDialog} from './../../dialogs/createTenant/dialog';
+// user dialog
+import {CreateUserDialog} from './../../dialogs/createUser/dialog';
 // namespace dialog
-import {CreateNamespaceDialog} from '../../dialogs/createNamespace/dialog'; // namespace dialog
+import {CreateNamespaceDialog} from '../../dialogs/createNamespace/dialog';
 // role dialog
-import {CreateRoleDialog} from '../../dialogs/createRole/dialog'; // role dialog
+import {CreateRoleDialog} from '../../dialogs/createRole/dialog';
 // clusterrole dialog
 import {CreateClusterroleDialog} from '../../dialogs/createClusterrole/dialog';
-import { assignQuotaDialog } from './../../dialogs/assignQuota/dialog';
+import {assignQuotaDialog} from './../../dialogs/assignQuota/dialog';
 import {ResourceMeta} from './actionbar';
 import {TenantService} from './tenant';
 import {CreateNodeDialog} from "../../dialogs/createNode/dialog";
@@ -60,6 +62,36 @@ export class VerberService {
     const dialogConfig = this.getDialogConfig_(displayName, typeMeta, objectMeta);
     this.dialog_
       .open(CreateTenantDialog, dialogConfig)
+      .afterClosed()
+      .subscribe(result => {
+        if (result) {
+          const url = RawResource.getUrl(this.tenant_.current(), typeMeta, objectMeta);
+          this.http_
+            .post(url, JSON.parse(result), {headers: this.getHttpHeaders_()})
+            .subscribe(() => this.onCreateTenant.emit(true), this.handleErrorResponse_.bind(this));
+        }
+      });
+  }
+    // create user
+    showUserCreateDialog(displayName: string, typeMeta: TypeMeta, objectMeta: ObjectMeta): void {
+      const dialogConfig = this.getDialogConfig_(displayName, typeMeta, objectMeta);
+      this.dialog_
+        .open(CreateUserDialog, dialogConfig)
+        .afterClosed()
+        .subscribe(result => {
+          if (result) {
+            const url = RawResource.getUrl(this.tenant_.current(), typeMeta, objectMeta);
+            this.http_
+              .post(url, JSON.parse(result), {headers: this.getHttpHeaders_()})
+              .subscribe(() => this.onCreateTenant.emit(true), this.handleErrorResponse_.bind(this));
+          }
+        });
+    }
+  //added quota dialog
+  showQuotaCreateDialog(displayName: string, typeMeta: TypeMeta, objectMeta: ObjectMeta): void {
+    const dialogConfig = this.getDialogConfig_(displayName, typeMeta, objectMeta);
+    this.dialog_
+      .open(assignQuotaDialog, dialogConfig)
       .afterClosed()
       .subscribe(result => {
         if (result) {
