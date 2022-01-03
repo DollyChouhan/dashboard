@@ -15,6 +15,10 @@
 
 package model
 
+import (
+	"github.com/kubernetes/dashboard/src/app/backend/api"
+)
+
 // User schema of the user table
 type User struct {
 	ID       int64  `json:"id"`
@@ -24,6 +28,22 @@ type User struct {
 	Type     string `json:"type"`
 }
 
+type User2 struct {
+	ObjectMeta User         `json:"metadata"`
+	TypeMeta   api.TypeMeta `json:"typeMeta"`
+	Phase      string       `json:"phase"`
+}
+
 type Token struct {
 	Token string `json:"token"`
+}
+
+type UserList struct {
+	ListMeta api.ListMeta `json:"listMeta"`
+
+	// Unordered list of Users.
+	Users []User2 `json:"users"`
+
+	// List of non-critical errors, that occurred during resource retrieval.
+	Errors []error `json:"errors"`
 }

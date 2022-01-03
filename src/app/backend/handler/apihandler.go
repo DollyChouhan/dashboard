@@ -5054,6 +5054,7 @@ func createConnection() *sql.DB {
 	// Open the connection
 	connStr := "host=" + DB_HOST + " port=" + DB_PORT + " dbname=" + POSTGRES_DB + " user=" + POSTGRES_USER + " password=" + POSTGRES_PASSWORD + " sslmode=disable"
 	//connStr := "host=192.168.1.243 port=5434 dbname=postgres user=postgres password=sonu123 sslmode=disable"
+	//connStr := "host=192.168.1.240 port=5432 dbname=postgres user=postgres password=postgres123 sslmode=disable"
 	db, err := sql.Open("postgres", connStr)
 
 	if err != nil {
@@ -5221,14 +5222,14 @@ func getUser(param string) (model.User, error) {
 }
 
 // get one user from the DB by its userid
-func getAllUsers() ([]model.User, error) {
+func getAllUsers() (*model.UserList, error) {
 	// create the postgres db connection
 	db := createConnection()
 
 	// close the db connection
 	defer db.Close()
 
-	var users []model.User
+	userList := new(model.UserList)
 
 	// create the select sql query
 	sqlStatement := `SELECT * FROM users`
@@ -5244,23 +5245,28 @@ func getAllUsers() ([]model.User, error) {
 	defer rows.Close()
 
 	// iterate over the rows
+	count := 0
 	for rows.Next() {
-		var user model.User
+		var user model.User2
 
 		// unmarshal the row object to user
-		err = rows.Scan(&user.ID, &user.Username, &user.Password, &user.Token, &user.Type)
+		err = rows.Scan(&user.ObjectMeta.ID, &user.ObjectMeta.Username, &user.ObjectMeta.Password, &user.ObjectMeta.Token, &user.ObjectMeta.Type)
 
 		if err != nil {
 			log.Fatalf("Unable to scan the row. %v", err)
 		}
+		user.Phase = "Active"
+		user.TypeMeta.Kind = "User"
 
 		// append the user in the users slice
-		users = append(users, user)
+		//users = append(users, user)
+		userList.Users = append(userList.Users, user)
+		count++
 
 	}
-
+	userList.ListMeta = api.ListMeta{TotalItems: count}
 	// return empty user on error
-	return users, err
+	return userList, err
 }
 
 func deleteUser(id int64) int64 {
