@@ -28,8 +28,10 @@ import (
 
 	restful "github.com/emicklei/go-restful"
 	"github.com/kubernetes/dashboard/src/app/backend/api"
+	"github.com/kubernetes/dashboard/src/app/backend/args"
 	"github.com/kubernetes/dashboard/src/app/backend/auth"
 	authApi "github.com/kubernetes/dashboard/src/app/backend/auth/api"
+	"github.com/kubernetes/dashboard/src/app/backend/client"
 	clientapi "github.com/kubernetes/dashboard/src/app/backend/client/api"
 	"github.com/kubernetes/dashboard/src/app/backend/errors"
 	"github.com/kubernetes/dashboard/src/app/backend/iam/model"
@@ -75,6 +77,7 @@ import (
 	"github.com/kubernetes/dashboard/src/app/backend/validation"
 	"golang.org/x/net/xsrftoken"
 	v1 "k8s.io/api/core/v1"
+	rbac "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/tools/remotecommand"
 )
@@ -5043,7 +5046,7 @@ type response struct {
 }
 
 // create connection with postgres db
-func createConnection() *sql.DB {
+func CreateConnection() *sql.DB {
 
 	DB_HOST := os.Getenv("DB_HOST")
 	DB_PORT := os.Getenv("DB_PORT")
@@ -5162,7 +5165,7 @@ func insertUser(user model.User) int64 {
 
 	// create the postgres db connection
 
-	db := createConnection()
+	db := CreateConnection()
 	//fmt.Printf("fetched token \n"+user_token)
 	// close the db connection
 	defer db.Close()
@@ -5189,7 +5192,7 @@ func insertUser(user model.User) int64 {
 // get one user from the DB by its userid
 func getUser(param string) (model.UserDetails, error) {
 	// create the postgres db connection
-	db := createConnection()
+	db := CreateConnection()
 
 	// close the db connection
 	defer db.Close()
@@ -5226,7 +5229,7 @@ func getUser(param string) (model.UserDetails, error) {
 // get one user from the DB by its userid
 func getAllUsers() (*model.UserList, error) {
 	// create the postgres db connection
-	db := createConnection()
+	db := CreateConnection()
 
 	// close the db connection
 	defer db.Close()
@@ -5274,7 +5277,7 @@ func getAllUsers() (*model.UserList, error) {
 func deleteUser(id int64) int64 {
 
 	// create the postgres db connection
-	db := createConnection()
+	db := CreateConnection()
 
 	// close the db connection
 	defer db.Close()
@@ -5299,4 +5302,113 @@ func deleteUser(id int64) int64 {
 	fmt.Printf("Total rows/record affected %v", rowsAffected)
 
 	return rowsAffected
+}
+
+func CreateClusterAdmin() error {
+	const adminName = "centaurus"
+	const dashboardNS = "kubernetes-dashboard"
+	const clsterroleName = "cluster-admin"
+	const saName = adminName + "-dashboard-sa"
+	admin := os.Getenv("CLUSTER_ADMIN")
+	if admin == "" {
+		admin = adminName
+	}
+	clientManager := client.NewClientManager(args.Holder.GetKubeConfigFile(), args.Holder.GetApiServerHost())
+
+	// TODO Check if kubernetes-dashboard namespace exists or not using GET method
+	k8sClient := clientManager.InsecureClient()
+
+	// Create namespace
+	namespaceSpec := new(ns.NamespaceSpec)
+	namespaceSpec.Name = dashboardNS
+	if err := ns.CreateNamespace(namespaceSpec, k8sClient); err != nil {
+		log.Printf("Create namespace for admin user failed, err:%s ", err.Error())
+		//return err
+	} else {
+		log.Printf("Create Namespace successfully")
+	}
+
+	// Create SA
+	serviceaccountSpec := new(serviceaccount.ServiceAccountSpec)
+	serviceaccountSpec.Name = saName
+	serviceaccountSpec.Namespace = dashboardNS
+	if err := serviceaccount.CreateServiceAccount(serviceaccountSpec, k8sClient); err != nil {
+		log.Printf("Create service account for admin user failed, err:%s ", err.Error())
+		return err
+	}
+
+	// Create Cluster Role
+	//var verbs []string
+	//var apiGroups []string
+	//var resources []string
+	//verbs = append(verbs, "*")
+	//apiGroups = append(apiGroups, "", "extensions", "apps")
+	//resources = append(resources, "deployments", "pods", "services", "secrets", "namespaces")
+
+	//clusterRoleSpec := &clusterrole.ClusterRoleSpec{
+	//	Name:      roleName,
+	//	Verbs:     verbs,
+	//	APIGroups: apiGroups,
+	//	Resources: resources,
+	//}
+	//
+	//if err := clusterrole.CreateClusterRole(clusterRoleSpec, k8sClient); err != nil {
+	//	log.Printf("Create cluster role for admin user failed, err:%s ", err.Error())
+	//	return err
+	//}
+
+	// Create CRB
+	clusterRoleBindingSpec := &clusterrolebinding.ClusterRoleBindingSpec{
+		Name: "admin-cluster-role-binding",
+		Subject: rbac.Subject{
+			Kind:      "ServiceAccount",
+			APIGroup:  "",
+			Name:      saName,
+			Namespace: dashboardNS,
+		},
+		RoleRef: rbac.RoleRef{
+			APIGroup: "rbac.authorization.k8s.io",
+			Kind:     "ClusterRole",
+			Name:     clsterroleName,
+		},
+	}
+	if err := clusterrolebinding.CreateClusterRoleBindings(clusterRoleBindingSpec, k8sClient); err != nil {
+		log.Printf("Create cluster role for admin user failed, err:%s ", err.Error())
+		return err
+	}
+
+	// Get Token
+	secretList, err := k8sClient.CoreV1().SecretsWithMultiTenancy(dashboardNS, "").List(api.ListEverything)
+	if err != nil {
+		log.Printf("Create cluster role for admin user failed, err:%s \n", err.Error())
+		return err
+	}
+	var token []byte
+	for _, secret := range secretList.Items {
+		checkName := strings.Contains(secret.Name, saName)
+		if secret.Namespace == dashboardNS && checkName {
+			token = secret.Data["token"]
+			break
+		}
+	}
+
+	// Create User and enter data into DB
+	user := model.User{
+		ID:       0,
+		Username: admin,
+		Password: "Centaurus@123",
+		Token:    string(token),
+		Type:     "ClusterAdmin",
+		Tenant:   "system",
+	}
+
+	if err != nil {
+		log.Fatalf("Unable to decode the request body.  %v", err)
+	}
+
+	// call insertUser function and pass the user
+	insertID := insertUser(user)
+
+	log.Printf("\n User Id: %d", insertID)
+	return nil
 }
