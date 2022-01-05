@@ -23,20 +23,27 @@ import {ResourceService} from '../../../services/resource/resource';
 import {NotificationsService} from '../../../services/global/notifications';
 import {ListGroupIdentifier, ListIdentifier} from '../groupids';
 import {MenuComponent} from '../../list/column/menu/component';
+import {UserApi} from "../../../../../frontend/common/services/global/userapi"
+import {VerberService} from "../../../../../frontend/common/services/global/verber"
 
 @Component({
-  selector: 'kd-users-list',
+  selector: 'kd-user-list',
   templateUrl: './template.html',
 })
-export class UserListComponent extends ResourceListWithStatuses<UserList, User> {
 
+export class TenantUserListComponent extends ResourceListWithStatuses<UserList, User> {
   @Input() endpoint = EndpointManager.resource(Resource.user).list();
+
+  displayName:any;
+  typeMeta:any;
+  objectMeta:any;
+
   constructor(
+    private readonly verber_: VerberService,
     private readonly user_: ResourceService<UserList>,
+    private userAPI_:UserApi,
     notifications: NotificationsService,
-
   ) {
-
     super('user', notifications);
     this.id = ListIdentifier.user;
     this.groupId = ListGroupIdentifier.cluster;
@@ -66,10 +73,20 @@ export class UserListComponent extends ResourceListWithStatuses<UserList, User> 
   }
 
   getDisplayColumns(): string[] {
-    return ['statusicon', 'name', 'phase', 'age'];
+    return ['statusicon', 'username', 'phase', 'type'];
   }
 
   getDisplayColumns2(): string[] {
-    return ['statusicon', 'name', 'phase', 'age'];
+    return ['statusicon', 'username', 'phase', 'type'];
   }
+
+  //added the code
+  onClick(): void {
+    this.verber_.showUserCreateDialog(this.displayName, this.typeMeta, this.objectMeta);  //changes needed
+  }
+
+  deleteUser(userID:string): void {
+    this.userAPI_.deleteUser(userID).subscribe();
+  }
+
 }

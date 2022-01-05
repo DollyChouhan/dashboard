@@ -12,63 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import {Component,Input, OnInit,Inject, ViewChild} from '@angular/core';
-import {HttpClient} from "@angular/common/http";
-import {UserApi} from "./userapi.service"
-import {VerberService} from "../../../../frontend/common/services/global/verber"
-import {MatPaginator} from '@angular/material/paginator';
-import {MatTableDataSource} from '@angular/material/table';
-import {MatSort} from '@angular/material/sort';
-
-export interface UserElement {
-  ID      :number;
-  Username :string ;
-  Type     :string ;
-}
-const USER_DATA: UserElement[]=[];
+import {Component, OnInit} from '@angular/core';
 
 @Component({
-  selector: 'kd-tenantusers-list',
-  templateUrl: './template.html',
+  selector: 'kd-user-list-view',
+  template: '<kd-user-list></kd-user-list>',
 })
-export class TenantUsersListComponent implements OnInit{
-  tempData:any[]=[];
-  displayedColumns = ['id', 'username', 'type'];
 
-  userArray: any[] = [];
-  displayName: any;
-  typeMeta: any;
-  objectMeta: any;
-  dataSource: MatTableDataSource<any>;
-  totalUsers: number;
+export class TenantUsersListComponent implements OnInit {
+  constructor() {}
 
-  @ViewChild(MatPaginator, {static: true}) paginator: MatPaginator;
-  @ViewChild(MatSort, {static: true}) sort: MatSort;
-
-  constructor(
-    private verber_: VerberService,
-    private userAPI_:UserApi,
-    private http: HttpClient){
-  }
-  ngOnInit(): void {
-    this.userAPI_.allUsers().subscribe(data=>{
-      for (let index = 0; index < data.length; index++) {
-        const row = data[index];
-            this.userArray.push(row);
-          }
-      this.dataSource = new MatTableDataSource(this.userArray);
-      this.dataSource.paginator = this.paginator;
-      this.dataSource.sort = this.sort;
-      this.totalUsers = this.dataSource.data.length
-    });
-          }
-
-  onClick(): void {
-    this.verber_.showUserCreateDialog(this.displayName, this.typeMeta, this.objectMeta);  //changes needed
-        }
-  deleteUser(userID:string): void {
-    this.userAPI_.deleteUser(userID).subscribe(result=>{
-      console.log("result from delete"+result)
-    });
-  }
+  ngOnInit() {}
 }

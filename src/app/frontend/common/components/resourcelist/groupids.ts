@@ -40,7 +40,7 @@ export enum ListIdentifier {
   resourcequota = 'resourcequota',
   role = 'roleList',
   tenantpartition = 'tenantpartition',
-  user = 'user'
+  user = 'users'
 }
 
 export enum ListGroupIdentifier {

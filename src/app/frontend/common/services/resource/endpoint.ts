@@ -42,11 +42,11 @@ export enum Resource {
   event = 'event',
   container = 'container',
   tenant = 'tenant',
-  user = 'user',
   partition = 'partition',
   resourcequota = 'resourcequota',
   role = 'role',
   tenantpartition = 'tenantpartition',
+  user = 'users',
 }
 
 export enum Utility {

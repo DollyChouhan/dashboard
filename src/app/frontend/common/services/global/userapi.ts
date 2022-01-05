@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core'
 import {HttpClient, HttpHeaders} from '@angular/common/http';
-import {CsrfTokenService} from "../../../common/services/global/csrftoken";
+import {CsrfTokenService} from "./csrftoken";
 import {CONFIG} from "../../../index.config";
 
 export interface DashboardUser {

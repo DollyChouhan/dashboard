@@ -18,12 +18,12 @@ import {ComponentsModule} from '../../common/components/module';
 import {SharedModule} from '../../shared.module';
 import {TenantUsersRoutingModule} from './routing';
 
-import {TenantUsersListComponent} from 'tenantmanagement/tenantuser/list/component';
+import {TenantUsersListComponent} from './list/component';
+import {TenantUsersDetailComponent} from './detail/component';
 
-import {TenantUsersDetailComponent} from "./detail/component";
-import {MatExpansionModule} from '@angular/material/expansion';
 @NgModule({
-  imports: [SharedModule, ComponentsModule, TenantUsersRoutingModule, MatExpansionModule],
+  imports: [SharedModule, ComponentsModule, TenantUsersRoutingModule],
   declarations: [TenantUsersListComponent, TenantUsersDetailComponent],
 })
+
 export class TenantUsersModule {}

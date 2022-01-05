@@ -26,10 +26,11 @@ type User struct {
 	Password string `json:"password"`
 	Token    string `json:"token"`
 	Type     string `json:"type"`
+	Tenant   string `json:"tenant"`
 }
 
-type User2 struct {
-	ObjectMeta User         `json:"metadata"`
+type UserDetails struct {
+	ObjectMeta User         `json:"objectMeta"`
 	TypeMeta   api.TypeMeta `json:"typeMeta"`
 	Phase      string       `json:"phase"`
 }
@@ -42,7 +43,7 @@ type UserList struct {
 	ListMeta api.ListMeta `json:"listMeta"`
 
 	// Unordered list of Users.
-	Users []User2 `json:"users"`
+	Users []UserDetails `json:"users"`
 
 	// List of non-critical errors, that occurred during resource retrieval.
 	Errors []error `json:"errors"`

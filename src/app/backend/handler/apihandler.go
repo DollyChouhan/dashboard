@@ -5053,8 +5053,7 @@ func createConnection() *sql.DB {
 
 	// Open the connection
 	connStr := "host=" + DB_HOST + " port=" + DB_PORT + " dbname=" + POSTGRES_DB + " user=" + POSTGRES_USER + " password=" + POSTGRES_PASSWORD + " sslmode=disable"
-	//connStr := "host=192.168.1.243 port=5434 dbname=postgres user=postgres password=sonu123 sslmode=disable"
-	//connStr := "host=192.168.1.240 port=5432 dbname=postgres user=postgres password=postgres123 sslmode=disable"
+
 	db, err := sql.Open("postgres", connStr)
 
 	if err != nil {
@@ -5170,13 +5169,13 @@ func insertUser(user model.User) int64 {
 
 	// create the insert sql query
 	// returning userid will return the id of the inserted user
-	sqlStatement := `INSERT INTO users (username, password, token, type) VALUES ($1, $2, $3, $4) RETURNING userid`
+	sqlStatement := `INSERT INTO users (username, password, token, type, tenant) VALUES ($1, $2, $3, $4, $5) RETURNING userid`
 	// the inserted id will store in this id
 	var id int64
 
 	// execute the sql statement
 	// Scan function will save the insert id in the id
-	err := db.QueryRow(sqlStatement, user.Username, user.Password, user.Token, user.Type).Scan(&id)
+	err := db.QueryRow(sqlStatement, user.Username, user.Password, user.Token, user.Type, user.Tenant).Scan(&id)
 
 	if err != nil {
 		log.Fatalf("Unable to execute the query. %v", err)
@@ -5188,7 +5187,7 @@ func insertUser(user model.User) int64 {
 }
 
 // get one user from the DB by its userid
-func getUser(param string) (model.User, error) {
+func getUser(param string) (model.UserDetails, error) {
 	// create the postgres db connection
 	db := createConnection()
 
@@ -5196,7 +5195,10 @@ func getUser(param string) (model.User, error) {
 	defer db.Close()
 
 	// create a user of model.User type
-	var user model.User
+	var user model.UserDetails
+
+	user.Phase = "Active"
+	user.TypeMeta.Kind = "User"
 
 	// create the select sql query
 	sqlStatement := `SELECT * FROM users WHERE username=$1`
@@ -5205,7 +5207,7 @@ func getUser(param string) (model.User, error) {
 	row := db.QueryRow(sqlStatement, param)
 
 	// unmarshal the row object to user
-	err := row.Scan(&user.ID, &user.Username, &user.Password, &user.Token, &user.Type)
+	err := row.Scan(&user.ObjectMeta.ID, &user.ObjectMeta.Username, &user.ObjectMeta.Password, &user.ObjectMeta.Token, &user.ObjectMeta.Type, &user.ObjectMeta.Tenant)
 
 	switch err {
 	case sql.ErrNoRows:
@@ -5247,10 +5249,10 @@ func getAllUsers() (*model.UserList, error) {
 	// iterate over the rows
 	count := 0
 	for rows.Next() {
-		var user model.User2
+		var user model.UserDetails
 
 		// unmarshal the row object to user
-		err = rows.Scan(&user.ObjectMeta.ID, &user.ObjectMeta.Username, &user.ObjectMeta.Password, &user.ObjectMeta.Token, &user.ObjectMeta.Type)
+		err = rows.Scan(&user.ObjectMeta.ID, &user.ObjectMeta.Username, &user.ObjectMeta.Password, &user.ObjectMeta.Token, &user.ObjectMeta.Type, &user.ObjectMeta.Tenant)
 
 		if err != nil {
 			log.Fatalf("Unable to scan the row. %v", err)

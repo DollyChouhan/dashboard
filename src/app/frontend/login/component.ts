@@ -15,15 +15,9 @@
 import {HttpClient, HttpErrorResponse} from '@angular/common/http';
 import {Component, NgZone, OnInit} from '@angular/core';
 import {ActivatedRoute, Router} from '@angular/router';
-import {
-  AuthenticationMode,
-  EnabledAuthenticationModes,
-  LoginSkippableResponse,
-  LoginSpec,
-} from '@api/backendapi';
+import {AuthenticationMode, EnabledAuthenticationModes, LoginSkippableResponse, LoginSpec} from '@api/backendapi';
 import {KdError, KdFile, StateError} from '@api/frontendapi';
 import {map} from 'rxjs/operators';
-
 import {AsKdError, K8SError} from '../common/errors/errors';
 import {AuthService} from '../common/services/global/authentication';
 
@@ -38,6 +32,7 @@ enum LoginModes {
   templateUrl: './template.html',
   styleUrls: ['./style.scss'],
 })
+
 export class LoginComponent implements OnInit {
   loginModes = LoginModes;
   selectedAuthenticationMode = LoginModes.Basic;
@@ -60,6 +55,7 @@ export class LoginComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
+
     this.http_
       .get<EnabledAuthenticationModes>('api/v1/login/modes')
       .subscribe((enabledModes: EnabledAuthenticationModes) => {
@@ -129,6 +125,7 @@ export class LoginComponent implements OnInit {
       case LoginModes.Basic:
         if ((event.target as HTMLInputElement).id === 'username') {
           this.username_ = (event.target as HTMLInputElement).value;
+          this.setUsername(this.username_);
         } else {
           this.password_ = (event.target as HTMLInputElement).value;
         }
@@ -137,16 +134,12 @@ export class LoginComponent implements OnInit {
     }
   }
 
-  getData(username:any) {
-    return this.http_.get('/api/v1/users/'+username, {responseType: 'json'})
+  public GetCurrentUserInformation(username:any): Promise<any>{
+    return this.http_.get('/api/v1/users/'+username, {responseType: 'json'}).toPromise()
   }
 
   private onFileLoad_(file: KdFile): void {
     this.kubeconfig_ = file.content;
-  }
-
-  public GetCurrentUserInformation(username:any): Promise<any>{
-    return this.getData(username).toPromise()
   }
 
   private async getLoginSpec_():Promise<LoginSpec>  {
@@ -159,8 +152,8 @@ export class LoginComponent implements OnInit {
         return {token: this.token_} as LoginSpec;
       case LoginModes.Basic:
         this.responseData = await this.GetCurrentUserInformation(this.username_)
-        if (this.responseData.password == this.password_){
-          return this.responseData as LoginSpec;
+        if (this.responseData.objectMeta.password == this.password_){
+          return this.responseData.objectMeta as LoginSpec;
         }
         else{
           return {} as LoginSpec;
@@ -169,4 +162,9 @@ export class LoginComponent implements OnInit {
         return {} as LoginSpec;
     }
   }
+
+  private setUsername (username_:string) {
+    sessionStorage.setItem('username', username_);
+  }
+
 }

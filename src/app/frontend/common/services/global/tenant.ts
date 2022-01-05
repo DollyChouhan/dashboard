@@ -31,12 +31,6 @@ export class TenantService {
     const autht3 = this.cookies_.get(CONFIG.defaultNamespace) || '';
     const autht4 = this.cookies_.get(CONFIG.systemTenantName) || '';
     this.setAuthTenant(tenantCookie);
-    console.log (tenantCookie);
-    console.log(autht1);
-    console.log(autht2);
-    console.log(autht3);
-    console.log(autht4);
-
   }
 
   setCurrent(tenant: string) {

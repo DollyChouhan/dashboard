@@ -21,13 +21,14 @@ import {HttpClient, HttpHeaders} from '@angular/common/http';
 import {MAT_DIALOG_DATA, MatDialogRef} from '@angular/material';
 import {AbstractControl, Validators,FormBuilder} from '@angular/forms';
 
-import { FormGroup} from '@angular/forms';
+import {FormGroup} from '@angular/forms';
 import {CONFIG} from "../../../index.config";
 import {CsrfTokenService} from "../../services/global/csrftoken";
 import {AlertDialog, AlertDialogConfig} from "../alert/dialog";
 
 import {NamespacedResourceService} from '../../services/resource/resource';
 import {SecretDetail} from '@api/backendapi';
+import {TenantService} from "../../services/global/tenant";
 
 export interface UserToken {
   token: string;
@@ -44,9 +45,9 @@ export interface CreateUserDialogMeta {
 
 export class CreateUserDialog implements OnInit {
   form1: FormGroup;
-  namespaceUsed = "default"
+  namespaceUsed = "centaurus-dashboard"
   adminroleUsed = "cluster-admin";
-  apiGroups : string [] =["", "extensions", "apps"]
+  apiGroups : string [] =["*"]
   resources : string [] =["deployments", "pods", "services", "secrets", "namespaces"]
   verbs :string []= ["*"]
   serviceAccountCreated:any[] = [];
@@ -64,21 +65,9 @@ export class CreateUserDialog implements OnInit {
    */
   tenantPattern: RegExp = new RegExp('^[a-z0-9]([-a-z0-9]*[a-z0-9])?$');
   storageidPattern: RegExp = new RegExp('^[0-9]$');
-  /**
-   * Max-length validation rule for namespace
-   */
-  namespaceMaxLength = 63;
-  /**
-   * Pattern validation rule for namespace
-   */
-  namespacePattern: RegExp = new RegExp('^[a-z0-9]([-a-z0-9]*[a-z0-9])?$');
 
   secret: SecretDetail;
-  secret1: SecretDetail;
   secretName =""
-  secretToken:string;
-  secretData: any[]=[];
-  testname="notFound"
 
   constructor(
     private readonly secret_: NamespacedResourceService<SecretDetail>,
@@ -88,7 +77,7 @@ export class CreateUserDialog implements OnInit {
     private readonly csrfToken_: CsrfTokenService,
     private readonly matDialog_: MatDialog,
     private readonly fb_: FormBuilder,
-
+    private readonly tenantService_ : TenantService
   ) {}
 
   ngOnInit(): void {
@@ -134,8 +123,8 @@ export class CreateUserDialog implements OnInit {
 
   }
 
-  get tenant(): AbstractControl {
-    return this.form1.get('tenant');
+  get tenant(): any {
+    return this.tenantService_.current()
   }
   get user(): AbstractControl {
     return this.form1.get('username');
@@ -152,27 +141,31 @@ export class CreateUserDialog implements OnInit {
     return this.form1.get('storageclusterid');
   }
 
-  createUser(usertoken :string) {
-    const userSpec= {id:1,username: this.user.value, password:this.pass.value, token:usertoken, type:this.usertype.value,tenantname:this.tenant.value};
-    const userTokenPromise = this.csrfToken_.getTokenForAction('users');
-    // const tokenPromisenamespace = this.csrfToken_.getTokenForAction('namespace');
-    userTokenPromise.subscribe(csrfToken => {
-      return this.http_
-        .post<{valid: boolean}>(
-          'api/v1/users',
-          {...userSpec},
-          {
-            headers: new HttpHeaders().set(this.config_.csrfHeaderName, csrfToken.token),
-          },
-        )
-        .subscribe(
-          () => {
-            this.dialogRef.close(this.user.value);
-          },
+  createUser() {
+    let response = this.http_.get('api/v1/tenant/'+this.user.value)
+    this.getToken(async (token_:any)=>{
+      const userSpec= {username: this.user.value, password:this.pass.value, token:token_, type:this.usertype.value,tenant:this.tenant};
+      const userTokenPromise = await this.csrfToken_.getTokenForAction('users');
+      userTokenPromise.subscribe(csrfToken => {
+        return this.http_
+          .post<{valid: boolean}>(
+            'api/v1/users',
+            {...userSpec},
+            {
+              headers: new HttpHeaders().set(this.config_.csrfHeaderName, csrfToken.token),
+            },
+          )
+          .subscribe(
+            () => {
+              this.dialogRef.close(this.user.value);
+            },
 
-        );
-    });
+          );
+      });
+    })
+
   }
+
   // create role
   createRole(): void {
     const tenantSpec= {name: this.user.value, namespace: this.namespaceUsed, apiGroups: this.apiGroups,verbs: this.verbs,resources: this.resources};
@@ -202,6 +195,7 @@ export class CreateUserDialog implements OnInit {
         );
     });
   }
+
   // create clusterrole
   createClusteRole(): void {
     const clusterroleSpec= {name: this.user.value,apiGroups: this.apiGroups,verbs: this.verbs,resources: this.resources};
@@ -231,6 +225,7 @@ export class CreateUserDialog implements OnInit {
         );
     });
   }
+
   // create service account
   createServiceAccount() {
     const serviseaccountSpec= {name: this.user.value,namespace: this.namespaceUsed};
@@ -252,6 +247,7 @@ export class CreateUserDialog implements OnInit {
         );
     })
   }
+
   createRoleBinding(): void{
     const rbSpec= {name: this.user.value,namespace: this.namespaceUsed, subject: { kind: "ServiceAccount", name: this.user.value,  namespace : this.namespaceUsed, apiGroup : ""},role_ref:{kind: "Role",name: this.user.value,apiGroup: "rbac.authorization.k8s.io"}};
     const tokenPromise = this.csrfToken_.getTokenForAction('rolebindings');
@@ -272,8 +268,9 @@ export class CreateUserDialog implements OnInit {
     })
 
   }
+
   createClusterRoleBinding(): void{
-    if( this.usertype.value == "TenantAdmin")
+    if( this.usertype.value == "tenant-admin")
     {
       this.adminroleUsed = this.user.value
     }
@@ -300,6 +297,7 @@ export class CreateUserDialog implements OnInit {
   decode(s: string): string {
     return atob(s);
   }
+
   //  Creates new tenant based on the state of the controller.
   createTenant(): void {
     const tenantSpec= {name: this.user.value,storageclusterid: this.storageclusterid.value};
@@ -331,80 +329,40 @@ export class CreateUserDialog implements OnInit {
   }
 
   // Get Secret name
-  getSecretName() : string {
-    this.http_.get("api/v1/secret/default").subscribe((data:any)=>{
-      const serviceaccount=this.user.value
-      const searchSecret=serviceaccount+"-token"
-      const queryStr = new RegExp(searchSecret,"gi");
-      const stringDataForm:string=JSON.stringify(data).toString()
-      const splitDataString:string =stringDataForm.split('"').toString().trim();
-      const splitArray = splitDataString.split(",")
+  getToken(callback: any): any {
+    let interval = setInterval(() => {
+      this.http_.get("api/v1/secret/"+ this.namespaceUsed ).subscribe((data:any)=>{
+        data.secrets.map((elem: any) => {
+          if(elem.objectMeta.name.includes(this.user.value + '-token')){
+            clearInterval(interval);
+            this.http_.get("api/v1/secret/" + this.namespaceUsed + "/" + elem.objectMeta.name).subscribe((data: any) => {
+              callback(this.decode(data.data.token));
+            })
+          }
+        });
+      });
+      }, 3000);
 
-      for(let j=0; j< splitArray.length; j++){
-        const element:string = splitArray[j]
-        if(element.search(queryStr)!=-1)
-        {
-          this.secretName=element
-        }
-      }
 
-      if(this.secretName!=""){
-        this.testname="Found"
-        this.getTokenFromSecret(this.secretName)
-      }
-    });
-    return this.secretName
-  }
-
-  getTokenFromSecret(secret_name:string) {
-    const tokenUrl="api/v1/secret/default/"+secret_name
-    this.http_.get(tokenUrl).subscribe((data : any )=>{
-      const stringDataForm:string = JSON.stringify(data).toString()
-      const split_array:string[] =stringDataForm.split(',');
-      const match_array:string[]=[];
-      split_array.forEach((element)=>{
-        const row:string = element.toString()
-        const re=/token/g
-        let restemp_result:string[]=[];
-        if(row.search(re)!= -1){
-          restemp_result=row.split(':')
-          match_array.push(restemp_result.toString())
-        }
-      })
-      const values:string[] = match_array[2].split(',')
-      let token_value:string;
-      for(let j=0;j<values.length;j++)
-      {
-        if(j==1)
-        {
-          token_value=values[j].trim()
-        }
-      }
-      const final_token:string=this.decode(token_value.substring(1,token_value.length-3))
-      this.createUser(final_token)
-    });
   }
 
   createTenantUser() {
-    this.createTenant()
+
     this.createServiceAccount()
 
-    if(this.usertype.value == "TenantUser"){
-      //console.log("Call... create role fun()")
+    this.createTenant()
+
+    if(this.usertype.value == "tenant-user"){
       this.createRole()
       this.createRoleBinding()
     } else {
-      //console.log("Call... create clusterrole fun()")
       this.createClusteRole()
       this.createClusterRoleBinding()
     }
-    let temp:string=this.getSecretName()
-    temp=this.getSecretName()
-    if(temp.localeCompare("")===-1)
-    {
-      const t1:string=this.getSecretName()
-    }
+    this.createUser()
+
   }
+
   isCreateDisabled(): boolean {
     return !this.user.value || !this.pass.value || !this.usertype.value;
   }
