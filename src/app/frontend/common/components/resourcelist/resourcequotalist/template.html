@@ -8,6 +8,13 @@
       </div>
     </div>
   </div>
+  <div class="col-12 col-sm-12 col-md-12 col-lg-12" *ngIf="verber_.success_quota">
+    <div class="alert alert-success alert-dismissible fade show custom_alert" role="alert">
+      <strong>{{verber_.success_result}} Resource Quota</strong> Successfully Created.
+      <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+  </div>
+
   <div class="row">
     <div class="col-12 col-sm-12 col-md-12 col-lg-12">
       <kd-card role="table" [hidden]="isHidden()">
@@ -20,7 +27,7 @@
           <div kdLoadingSpinner [isLoading]="isLoading"></div>
           <mat-table [dataSource]="getData()"
                      matSort
-                     [matSortActive]="getColumns()[3]"
+                     [matSortActive]="getColumns()[5]"
                      matSortDisableClear
                      matSortDirection="asc">
             <ng-container [matColumnDef]="getColumns()[0]">
@@ -32,13 +39,16 @@
               </mat-cell>
             </ng-container>
 
+
             <ng-container [matColumnDef]="getColumns()[1]">
               <mat-header-cell *matHeaderCellDef
                                mat-sort-header
                                disableClear="true"
                                i18n>Name</mat-header-cell>
               <mat-cell *matCellDef="let resourcequota">
-                {{resourcequota.objectMeta.name}}
+                <a [routerLink]="getDetailsHref(resourcequota.objectMeta.name)"
+                   queryParamsHandling="preserve">{{resourcequota.objectMeta.name}}</a>
+
               </mat-cell>
             </ng-container>
 
@@ -74,7 +84,6 @@
                 <ng-container *ngIf="!resourcequota.statusList">-</ng-container>
               </mat-cell>
             </ng-container>
-
 
             <ng-container *ngFor="let col of getActionColumns()"
                           [matColumnDef]="col.name">

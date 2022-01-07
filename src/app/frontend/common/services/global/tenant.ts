@@ -26,10 +26,6 @@ export class TenantService {
 
   constructor(private readonly cookies_: CookieService) {
     const tenantCookie = this.cookies_.get(CONFIG.authTenantCookieName) || '';
-    const autht1 = this.cookies_.get(CONFIG.authTokenHeaderName) || '';
-    const autht2 = this.cookies_.get(CONFIG.authTokenCookieName) || '';
-    const autht3 = this.cookies_.get(CONFIG.defaultNamespace) || '';
-    const autht4 = this.cookies_.get(CONFIG.systemTenantName) || '';
     this.setAuthTenant(tenantCookie);
   }
 

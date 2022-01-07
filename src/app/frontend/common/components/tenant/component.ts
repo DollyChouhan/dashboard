@@ -45,7 +45,6 @@ export class TenantSelectorComponent implements OnInit {
 
   @ViewChild(MatSelect, {static: true}) private readonly select_: MatSelect;
   @ViewChild('tenantInput', {static: true}) private readonly tenantInputEl_: ElementRef;
-  private responseData: any;
 
   constructor(
     private readonly router_: Router,

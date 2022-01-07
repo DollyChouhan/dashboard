@@ -25,16 +25,16 @@ import {TriggerResourceDialog} from '../../dialogs/triggerresource/dialog';
 import {RawResource} from '../../resources/rawresource';
 
 // tenat dialog
-import {CreateTenantDialog} from './../../dialogs/createTenant/dialog';
+import { CreateTenantDialog } from './../../dialogs/createTenant/dialog';
 // user dialog
 import {CreateUserDialog} from './../../dialogs/createUser/dialog';
 // namespace dialog
-import {CreateNamespaceDialog} from '../../dialogs/createNamespace/dialog';
+import {CreateNamespaceDialog} from '../../dialogs/createNamespace/dialog'; // namespace dialog
 // role dialog
-import {CreateRoleDialog} from '../../dialogs/createRole/dialog';
+import {CreateRoleDialog} from '../../dialogs/createRole/dialog'; // role dialog
 // clusterrole dialog
 import {CreateClusterroleDialog} from '../../dialogs/createClusterrole/dialog';
-import {assignQuotaDialog} from './../../dialogs/assignQuota/dialog';
+import { assignQuotaDialog } from './../../dialogs/assignQuota/dialog';
 import {ResourceMeta} from './actionbar';
 import {TenantService} from './tenant';
 import {CreateNodeDialog} from "../../dialogs/createNode/dialog";
