@@ -14,8 +14,6 @@ See the License for the specific language governing permissions and
 limitations under the License.
 -->
 
-
-
 <div class="row">
     <div class="col-12 col-sm-12 col-md-12 col-lg-12">
       <div class="create_btn_sec" align="right">
@@ -30,7 +28,7 @@ limitations under the License.
          [hidden]="isHidden()">
   <div title
        fxLayout="row"
-       i18n>Resource Partition</div>
+       i18n>Resource</div>
   <div description><span class="kd-muted-light"
                          i18n>Items:&nbsp;</span>{{totalItems}}</div>
   <div actions>
@@ -63,7 +61,7 @@ limitations under the License.
                          i18n>Name</mat-header-cell>
         <mat-cell *matCellDef="let node">
           <a routerLink="/node" queryParamsHandling="preserve" routerLinkActive="active">
-            RP1
+            RP1-Master
           </a>
         </mat-cell>
       </ng-container>
@@ -83,7 +81,7 @@ limitations under the License.
                          disableClear="true"
                          i18n>CPU limits (cores)</mat-header-cell>
         <mat-cell *matCellDef="let node">
-          2000.00m (60.00%)
+          60.00%
         </mat-cell>
       </ng-container>
 
@@ -93,7 +91,7 @@ limitations under the License.
                          disableClear="true"
                          i18n>Memory limits (bytes)</mat-header-cell>
         <mat-cell *matCellDef="let node">
-          170.00Mi (0.71%)
+         0.71%
         </mat-cell>
       </ng-container>
 
@@ -147,7 +145,7 @@ limitations under the License.
              [hidden]="isHidden()">
       <div title
            fxLayout="row"
-           i18n>Tenant Partition</div>
+           i18n>Tenant</div>
       <div description><span class="kd-muted-light"
                              i18n>Items:&nbsp;</span>{{totalItems}}</div>
       <div actions>
@@ -172,7 +170,6 @@ limitations under the License.
               </mat-icon>
             </mat-cell>
           </ng-container>
-
           <ng-container [matColumnDef]="getColumns2()[1]">
             <mat-header-cell *matHeaderCellDef
                              mat-sort-header
@@ -180,18 +177,16 @@ limitations under the License.
                              i18n>Name</mat-header-cell>
             <mat-cell *matCellDef="let node">
               <a routerLink="/tenantpartition" queryParamsHandling="preserve" routerLinkActive="active">
-                TP1
+                TP1-Master
               </a>
             </mat-cell>
           </ng-container>
 
           <ng-container [matColumnDef]="getColumns2()[2]">
             <mat-header-cell *matHeaderCellDef
-                             mat-sort-header
-                             disableClear="true"
-                             i18n>Node Count</mat-header-cell>
+                             i18n></mat-header-cell>
             <mat-cell *matCellDef="let node">
-             10
+
             </mat-cell>
           </ng-container>
 
@@ -211,7 +206,7 @@ limitations under the License.
                              disableClear="true"
                              i18n>CPU limits (cores)</mat-header-cell>
             <mat-cell *matCellDef="let node">
-              2000.00m (60.00%)
+            60.00%
             </mat-cell>
           </ng-container>
 
@@ -221,7 +216,7 @@ limitations under the License.
                              disableClear="true"
                              i18n>Memory limits (bytes)</mat-header-cell>
             <mat-cell *matCellDef="let node">
-              170.00Mi (0.71%)</mat-cell>
+             0.71%</mat-cell>
           </ng-container>
 
 

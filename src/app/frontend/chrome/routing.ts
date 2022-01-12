@@ -29,7 +29,6 @@ const routes: Routes = [
         path: 'error',
         loadChildren: 'error/module#ErrorModule',
       },
-
       // Cluster Management
       {
         path: 'cluster',
@@ -37,7 +36,7 @@ const routes: Routes = [
       },
       {
         path: 'clusterrole',
-        loadChildren: 'tenantmanagement/clusterrole/module#ClusterRoleModule',
+        loadChildren: 'resource/cluster/clusterrole/module#ClusterRoleModule',
       },
       {
         path: 'role',

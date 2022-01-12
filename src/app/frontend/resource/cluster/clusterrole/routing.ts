@@ -13,16 +13,33 @@
 // limitations under the License.
 
 import {NgModule} from '@angular/core';
-
-import {ComponentsModule} from '../../common/components/module';
-import {SharedModule} from '../../shared.module';
+import {Route, RouterModule} from '@angular/router';
+import {DEFAULT_ACTIONBAR} from '../../../common/components/actionbars/routing';
 
 import {ClusterRoleDetailComponent} from './detail/component';
 import {ClusterRoleListComponent} from './list/component';
-import {ClusterRoutingModule} from './routing';
+import {TENANTMANAGEMENT_ROUTE} from "../../../tenantmanagement/routing";
+
+const CLUSTERROLE_LIST_ROUTE: Route = {
+  path: '',
+  component: ClusterRoleListComponent,
+  data: {
+    breadcrumb: 'Cluster Roles',
+    parent: TENANTMANAGEMENT_ROUTE,
+  },
+};
+
+const CLUSTERROLE_DETAIL_ROUTE: Route = {
+  path: ':resourceName',
+  component: ClusterRoleDetailComponent,
+  data: {
+    breadcrumb: '{{ resourceName }}',
+    parent: CLUSTERROLE_LIST_ROUTE,
+  },
+};
 
 @NgModule({
-  imports: [SharedModule, ComponentsModule, ClusterRoutingModule],
-  declarations: [ClusterRoleListComponent, ClusterRoleDetailComponent],
+  imports: [RouterModule.forChild([CLUSTERROLE_LIST_ROUTE, CLUSTERROLE_DETAIL_ROUTE, DEFAULT_ACTIONBAR])],
+  exports: [RouterModule],
 })
-export class ClusterRoleModule {}
+export class ClusterRoutingModule {}
