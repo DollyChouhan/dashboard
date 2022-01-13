@@ -37,7 +37,7 @@ const routes: Routes = [
       },
       {
         path: 'clusterrole',
-        loadChildren: 'tenantmanagement/clusterrole/module#ClusterRoleModule',
+        loadChildren: 'resource/cluster/clusterrole/module#ClusterRoleModule',
       },
       {
         path: 'role',
@@ -86,33 +86,16 @@ const routes: Routes = [
         loadChildren: 'resource/workloads/namespace/module#NamespaceModule',
       },
       {
-
         path: 'serviceaccount',
         loadChildren: 'resource/workloads/serviceaccount/module#ServiceAccountModule',
-
       },
       {
         path: 'workloadoverview',
         loadChildren: 'resource/workloads/workloadoverview/module#WorkloadOverviewModule',
-
-      },
-      {
-        path: 'serviceaccount',
-        loadChildren: 'resource/workloads/serviceaccount/module#ServiceAccountModule',
-
-      },
-      {
-        path: 'serviceaccount',
-        loadChildren: 'resource/workloads/serviceaccount/module#ServiceAccountModule',
-
       },
       {
         path: 'cronjob',
         loadChildren: 'resource/workloads/cronjob/module#CronJobModule',
-      },
-      {
-        path: 'daemonset',
-        loadChildren: 'resource/workloads/daemonset/module#DaemonSetModule',
       },
       {
         path: 'deployment',
@@ -129,10 +112,6 @@ const routes: Routes = [
       {
         path: 'replicaset',
         loadChildren: 'resource/workloads/replicaset/module#ReplicaSetModule',
-      },
-      {
-        path: 'replicationcontroller',
-        loadChildren: 'resource/workloads/replicationcontroller/module#ReplicationControllerModule',
       },
       {
         path: 'statefulset',
