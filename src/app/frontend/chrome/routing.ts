@@ -98,6 +98,10 @@ const routes: Routes = [
         loadChildren: 'resource/workloads/cronjob/module#CronJobModule',
       },
       {
+        path: 'daemonset',
+        loadChildren: 'resource/workloads/daemonset/module#DaemonSetModule',
+      },
+      {
         path: 'deployment',
         loadChildren: 'resource/workloads/deployment/module#DeploymentModule',
       },
